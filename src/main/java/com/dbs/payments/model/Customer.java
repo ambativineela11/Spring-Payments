@@ -5,12 +5,10 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 @Entity
-@Table(name = "customer")
+@Table(name = "customer_table")
 public class Customer {
 
 	@Id
@@ -29,30 +27,26 @@ public class Customer {
 	@Column(name = "overdraft")
 	private String overDraft;
 	
-	@ManyToOne
-	@JoinColumn(name = "bic_code")
-	private Bic bicCode;
+	
 
 	public Customer() {
 		super();
 		// TODO Auto-generated constructor stub
 	}
 
-	public Customer(int slno, long customerId, String accountHolderName, double clearBalance, String overDraft,
-			Bic bicCode) {
+	public Customer(int slno, long customerId, String accountHolderName, double clearBalance, String overDraft) {
 		super();
 		this.slno = slno;
 		this.customerId = customerId;
 		this.accountHolderName = accountHolderName;
 		this.clearBalance = clearBalance;
 		this.overDraft = overDraft;
-		this.bicCode = bicCode;
-	}
+		}
 
 	@Override
 	public String toString() {
 		return "Customer [slno=" + slno + ", customerId=" + customerId + ", accountHolderName=" + accountHolderName
-				+ ", clearBalance=" + clearBalance + ", overDraft=" + overDraft + ", bicCode=" + bicCode + "]";
+				+ ", clearBalance=" + clearBalance + ", overDraft=" + overDraft + "]";
 	}
 
 	public int getSlno() {
@@ -95,11 +89,4 @@ public class Customer {
 		this.overDraft = overDraft;
 	}
 
-	public Bic getBicCode() {
-		return bicCode;
-	}
-
-	public void setBicCode(Bic bicCode) {
-		this.bicCode = bicCode;
-	}
 }

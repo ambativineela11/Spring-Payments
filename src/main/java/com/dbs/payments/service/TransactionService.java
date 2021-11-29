@@ -1,7 +1,7 @@
 package com.dbs.payments.service;
 
+import java.util.ArrayList;
 import java.util.Optional;
-import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -11,6 +11,7 @@ import com.dbs.payments.model.Transaction;
 import com.dbs.payments.repository.CustomerRepository;
 import com.dbs.payments.repository.TransactionRepository;
 
+
 @Service
 public class TransactionService {
 
@@ -18,93 +19,122 @@ public class TransactionService {
 	TransactionRepository transactionRepository;
 	@Autowired
 	CustomerRepository customerRepository;
+	@Autowired
+	SanctionService sanctionService;
 	
 	public Transaction insertTransaction(Transaction transaction) throws Exception {
-		long senderId = transaction.getSenderId();
+		String senderId = transaction.getSenderId();
 		double amount = transaction.getAmountSent();
-		long receiverId = transaction.getReceiverId();
-		if(checkSenderBalance(senderId, amount)&& checkReceiver(receiverId) && checkTransaferType(transaction.getTransactionType(),senderId,receiverId))
+		String receiverId = transaction.getReceiverId();
+		if(transaction.getSenderId().equals(transaction.getReceiverId()))
 		{
+			throw new Exception("sender and receiver id are same");
+		}
+		if(!isValidUser(transaction.getReceiverName()))
+		{
+			throw new Exception("user is not valid");
+		}
+		if(checkTransaferType(transaction.getTransactionType(),senderId,receiverId) && checkReceiver(receiverId) && checkSenderBalance(senderId, amount))
+		{
+			
 			changeBalance(senderId, receiverId, amount);
 			return transactionRepository.save(transaction);
 		}
-		throw new Exception("cannot transfer");
+		throw new Exception("Cannot Transfer");
 	}
 	
-	public Boolean checkSenderBalance(long senderId,double amount) {
-		Optional<Customer> customerOptional =  customerRepository.findByCustomerId(senderId);
+	private boolean isValidUser(String receiverName) {
+		return sanctionService.getSanctionName(receiverName);
+
+	}
+
+	public Boolean checkSenderBalance(String senderId,double amount) throws Exception {
+		Optional<Customer> customerOptional =  customerRepository.findByCustomerId(Long.parseLong(senderId));
 		if(customerOptional != null)
 		{
 			Customer customer = customerOptional.get();
 		String overdraft = customer.getOverDraft();
 		double clearBalance = customer.getClearBalance();
 		double totalTransferableBal = amount + (0.0025)*amount;
-		if(overdraft.equals("no"))
+		if(overdraft.toLowerCase().equals("no"))
 		{
 			if(totalTransferableBal <= clearBalance)
 			{
 				return true;
 			}
-			return false;
+			throw new Exception("Insufficient Balance");
+			//return false;
 		}
 		return true;
 		}
-		return false;
+		throw new Exception("Invalid Sender");
+		//return false;
 		}
 	
-	public Boolean checkReceiver(long receiverId)
+	public Boolean checkReceiver(String receiverId) throws Exception
 	{
-		Optional<Customer> customerOptional =  customerRepository.findByCustomerId(receiverId);
+		Optional<Customer> customerOptional =  customerRepository.findByCustomerId(Long.parseLong(receiverId));
 		if(customerOptional.isPresent())
 			return true;
-		return false;
+		throw new Exception("Receiver id is not present");
+		//return false;
 	}
 	
-	public void changeBalance(long senderId,long receiverId,double amount)
+	public void changeBalance(String senderId,String receiverId,double amount)
 	{
 		Customer sender = getCustomer(senderId);
 		Customer receiver = getCustomer(receiverId);
-		Customer senderWithNewBalance = new Customer(sender.getSlno(),sender.getCustomerId(),sender.getAccountHolderName(),sender.getClearBalance()-amount,sender.getOverDraft(),sender.getBicCode());
+		Customer senderWithNewBalance = new Customer(sender.getSlno(),sender.getCustomerId(),sender.getAccountHolderName(),sender.getClearBalance()-amount,sender.getOverDraft());
 		customerRepository.save(senderWithNewBalance);
-		Customer receiverWithNewBalance = new Customer(receiver.getSlno(),receiver.getCustomerId(),receiver.getAccountHolderName(),receiver.getClearBalance()+amount,receiver.getOverDraft(),receiver.getBicCode());
+		Customer receiverWithNewBalance = new Customer(receiver.getSlno(),receiver.getCustomerId(),receiver.getAccountHolderName(),receiver.getClearBalance()+amount,receiver.getOverDraft());
 		customerRepository.save(receiverWithNewBalance);
 	}
 	
-	public Customer getCustomer(long customerId)
+	public Customer getCustomer(String customerId)
 	{
-		Optional<Customer> customerOptional =  customerRepository.findByCustomerId(customerId);
+		Optional<Customer> customerOptional =  customerRepository.findByCustomerId(Long.parseLong(customerId));
 		return customerOptional.get();
 	}
 
-	public boolean checkTransaferType(String ttype,long c_acct,long r_acct)
+	public boolean checkTransaferType(String ttype,String c_acct,String r_acct) throws Exception
 	{
 	
-		if(ttype.equals("bank"))
+		if(ttype.toLowerCase().equals("bank"))
 		{
-			String c_name = customerRepository.findByCustomerId(c_acct).get().getAccountHolderName();
-			String r_name = customerRepository.findByCustomerId(r_acct).get().getAccountHolderName();
+			String c_name = customerRepository.findByCustomerId(Long.parseLong(c_acct)).get().getAccountHolderName();
+			String r_name = customerRepository.findByCustomerId(Long.parseLong(r_acct)).get().getAccountHolderName();
 			
-			boolean match1 = Pattern.matches("HDFC Bank[.]*", c_name);
-			boolean match2 = Pattern.matches("HDFC Bank[.]*", r_name);
-			
-			if(match1 && match2)
+////			boolean match1 = Pattern.matches("HDFC Bank", c_name.toLowerCase());
+////			boolean match2 = Pattern.matches("HDFC Bank", r_name.toLowerCase());
+////			
+//			if(c_name.contains("HDFC BANK") && r_name.contains("HDFC BANK"))
+//				return true;
+//			else
+//				throw new Exception("Bank type is not supported");
+//				//return false;
+			ArrayList<String> names =  new ArrayList<String>();
+			names.add("HDFC BANK -(C1-A)");
+			names.add("HDFC BANK -(B1-A)");
+			names.add("HDFC BANK -(H0-A)");
+			if(names.contains(c_name) && names.contains(r_name))
 				return true;
-			else
-				return false;
+			throw new Exception("Bank type is not supported");
 		
 		}
-		else if(ttype.equals("customer"))
+		else if(ttype.toLowerCase().equals("customer"))
 		{
-			String c_name = customerRepository.findByCustomerId(c_acct).get().getAccountHolderName();
+			String c_name = customerRepository.findByCustomerId(Long.parseLong(c_acct)).get().getAccountHolderName();
 			
-			boolean match1 = Pattern.matches("HDFC Bank[.]*", c_name);
+			//boolean match1 = Pattern.matches("HDFC Bank", c_name.toLowerCase());
 			
-			if(!match1)
+			if(c_name.indexOf("HDFC BANK") == -1)
 				return true;
 			else
-				return false;
+				throw new Exception("Customer type is not supported");
+
 		}
-		return false;
+		throw new Exception("Invalid transfer type");
+		//return false;
 	}
 
 }

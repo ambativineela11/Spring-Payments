@@ -10,7 +10,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name = "transaction")
+@Table(name = "transaction_table")
 public class Transaction {
 
 	@Id
@@ -18,10 +18,10 @@ public class Transaction {
 	private int slno;
 	
 	@Column(name = "sender_id")
-	private int senderId;
+	private String senderId;
 	
 	@Column(name = "receiver_id")
-	private int receiverId;
+	private String receiverId;
 	
 	@Column
 	private LocalDateTime dateTime;
@@ -31,6 +31,15 @@ public class Transaction {
 	
 	@Column
 	private String transactionType;
+	
+	@Column
+	private String receiverName;
+	
+	@Column
+	private String messageCode;
+	
+	@Column
+	private String bicCode;
 
 	public String getTransactionType() {
 		return transactionType;
@@ -48,19 +57,19 @@ public class Transaction {
 		this.slno = slno;
 	}
 
-	public int getSenderId() {
+	public String getSenderId() {
 		return senderId;
 	}
 
-	public void setSenderId(int senderId) {
+	public void setSenderId(String senderId) {
 		this.senderId = senderId;
 	}
 
-	public int getReceiverId() {
+	public String getReceiverId() {
 		return receiverId;
 	}
 
-	public void setReceiverId(int receiverId) {
+	public void setReceiverId(String receiverId) {
 		this.receiverId = receiverId;
 	}
 
@@ -81,14 +90,43 @@ public class Transaction {
 	}
 
 
+
+	public String getReceiverName() {
+		return receiverName;
+	}
+
+	public void setReceiverName(String receiverName) {
+		this.receiverName = receiverName;
+	}
+
+	public String getMessageCode() {
+		return messageCode;
+	}
+
+	public void setMessageCode(String messageCode) {
+		this.messageCode = messageCode;
+	}
+	
+
+	public String getBicCode() {
+		return bicCode;
+	}
+
+	public void setBicCode(String bicCode) {
+		this.bicCode = bicCode;
+	}
+
+	
+
 	@Override
 	public String toString() {
 		return "Transaction [slno=" + slno + ", senderId=" + senderId + ", receiverId=" + receiverId + ", dateTime="
-				+ dateTime + ", amountSent=" + amountSent + ", transactionType=" + transactionType + "]";
+				+ dateTime + ", amountSent=" + amountSent + ", transactionType=" + transactionType + ", receiverName="
+				+ receiverName + ", messageCode=" + messageCode + ", bicCode=" + bicCode + "]";
 	}
 
-	public Transaction(int slno, int senderId, int receiverId, LocalDateTime dateTime, double amountSent,
-			String transactionType) {
+	public Transaction(int slno, String senderId, String receiverId, LocalDateTime dateTime, double amountSent,
+			String transactionType, String receiverName, String messageCode, String bicCode) {
 		super();
 		this.slno = slno;
 		this.senderId = senderId;
@@ -96,6 +134,9 @@ public class Transaction {
 		this.dateTime = dateTime;
 		this.amountSent = amountSent;
 		this.transactionType = transactionType;
+		this.receiverName = receiverName;
+		this.messageCode = messageCode;
+		this.bicCode = bicCode;
 	}
 
 	public Transaction() {
